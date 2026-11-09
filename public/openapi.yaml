@@ -1,0 +1,675 @@
+openapi: 3.0.3
+info:
+  title: LifeUp AV2 API
+  description: |
+    API REST de sincronização Offline-First — Tema 03 (Monitoramento Pessoal & Hábitos).
+    Computação Móvel — Grupo 04.
+  version: 1.0.0
+  contact:
+    name: Grupo 04 — LifeUp
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+  - url: /
+    description: Servidor atual
+
+tags:
+  - name: Sistema
+  - name: Auth
+  - name: Habitos
+  - name: Metas
+  - name: Registros
+  - name: Sync
+
+paths:
+  /:
+    get:
+      tags: [Sistema]
+      summary: Índice da API
+      responses:
+        '200':
+          description: Lista resumida de rotas
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /health:
+    get:
+      tags: [Sistema]
+      summary: Health check
+      responses:
+        '200':
+          description: Serviço saudável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cadastrar usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              nome: Allan Scherrer
+              nome_usuario: allan
+              senha: "1234"
+      responses:
+        '201':
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioPublico'
+        '409':
+          description: Nome de usuário já existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              nome_usuario: allan
+              senha: "1234"
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioPublico'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /usuarios/{usuarioId}/habitos:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+    get:
+      tags: [Habitos]
+      summary: Listar hábitos do usuário
+      responses:
+        '200':
+          description: Lista de hábitos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Habito'
+    post:
+      tags: [Habitos]
+      summary: Criar/atualizar hábito (upsert)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HabitoInput'
+            example:
+              id: "habito-uuid-1"
+              nome: Beber água
+              descricao: Meta diária
+              tipo: hidratacao
+              ativo: true
+      responses:
+        '200':
+          description: Hábito salvo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Habito'
+
+  /usuarios/{usuarioId}/habitos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+      - $ref: '#/components/parameters/recursoId'
+    put:
+      tags: [Habitos]
+      summary: Atualizar hábito por id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HabitoInput'
+      responses:
+        '200':
+          description: Hábito atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Habito'
+    delete:
+      tags: [Habitos]
+      summary: Remover hábito
+      responses:
+        '200':
+          description: Removido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Removido'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /usuarios/{usuarioId}/metas:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+    get:
+      tags: [Metas]
+      summary: Listar metas do usuário
+      responses:
+        '200':
+          description: Lista de metas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Meta'
+    post:
+      tags: [Metas]
+      summary: Criar/atualizar meta (upsert)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetaInput'
+            example:
+              id: "meta-uuid-1"
+              tipo: HIDRICA
+              titulo: Beber 2L
+              descricao: Hidratação diária
+              valor_objetivo: 2000
+              valor_atual: 0
+              status: pendente
+      responses:
+        '200':
+          description: Meta salva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meta'
+
+  /usuarios/{usuarioId}/metas/{id}:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+      - $ref: '#/components/parameters/recursoId'
+    put:
+      tags: [Metas]
+      summary: Atualizar meta por id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetaInput'
+      responses:
+        '200':
+          description: Meta atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meta'
+    delete:
+      tags: [Metas]
+      summary: Remover meta
+      responses:
+        '200':
+          description: Removida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Removido'
+        '404':
+          description: Não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /usuarios/{usuarioId}/registros:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+    get:
+      tags: [Registros]
+      summary: Listar registros do usuário
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Registro'
+    post:
+      tags: [Registros]
+      summary: Criar/atualizar registro (upsert)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroInput'
+            example:
+              id: "reg-uuid-1"
+              habito_id: "habito-uuid-1"
+              valor: 250
+              observacao: água 250ml
+      responses:
+        '200':
+          description: Registro salvo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registro'
+
+  /usuarios/{usuarioId}/registros/{id}:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+      - $ref: '#/components/parameters/recursoId'
+    put:
+      tags: [Registros]
+      summary: Atualizar registro por id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroInput'
+      responses:
+        '200':
+          description: Registro atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registro'
+    delete:
+      tags: [Registros]
+      summary: Remover registro
+      responses:
+        '200':
+          description: Removido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Removido'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /usuarios/{usuarioId}/sync:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+    post:
+      tags: [Sync]
+      summary: Sincronização Offline-First (lote)
+      description: |
+        Recebe hábitos/metas/registros pendentes do app, faz upsert no PostgreSQL
+        e devolve o estado consolidado do usuário.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+            example:
+              habitos: []
+              metas: []
+              registros: []
+      responses:
+        '200':
+          description: Sync concluído
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /usuarios/{usuarioId}/backup:
+    parameters:
+      - $ref: '#/components/parameters/usuarioId'
+    get:
+      tags: [Sync]
+      summary: Backup consolidado do usuário
+      responses:
+        '200':
+          description: Snapshot completo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupResponse'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+components:
+  parameters:
+    usuarioId:
+      name: usuarioId
+      in: path
+      required: true
+      schema:
+        type: integer
+      example: 1
+    recursoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "uuid-do-recurso"
+
+  schemas:
+    Erro:
+      type: object
+      properties:
+        erro:
+          type: string
+        detalhes:
+          type: string
+
+    Removido:
+      type: object
+      properties:
+        removido:
+          type: boolean
+          example: true
+
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        servico:
+          type: string
+        tema:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [nome, nome_usuario, senha]
+      properties:
+        nome:
+          type: string
+        nome_usuario:
+          type: string
+          minLength: 3
+        senha:
+          type: string
+          minLength: 4
+
+    LoginRequest:
+      type: object
+      required: [nome_usuario, senha]
+      properties:
+        nome_usuario:
+          type: string
+        senha:
+          type: string
+
+    UsuarioPublico:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        nome_usuario:
+          type: string
+        data_cadastro:
+          type: string
+          format: date-time
+
+    Habito:
+      type: object
+      properties:
+        id:
+          type: string
+        usuario_id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+          enum: [hidratacao, alimentacao, atividadeFisica, sono, estudo, outro]
+        ativo:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+        atualizado_em:
+          type: string
+          format: date-time
+
+    HabitoInput:
+      type: object
+      required: [id, nome, tipo]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+        ativo:
+          type: boolean
+          default: true
+        data_criacao:
+          type: string
+          format: date-time
+
+    Meta:
+      type: object
+      properties:
+        id:
+          type: string
+        usuario_id:
+          type: integer
+        tipo:
+          type: string
+          enum: [HIDRICA, CALORICA]
+        titulo:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        valor_objetivo:
+          type: number
+        valor_atual:
+          type: number
+        status:
+          type: string
+          enum: [pendente, emAndamento, concluida, critica]
+        data_criacao:
+          type: string
+          format: date-time
+        atualizado_em:
+          type: string
+          format: date-time
+
+    MetaInput:
+      type: object
+      required: [id, tipo, titulo, valor_objetivo]
+      properties:
+        id:
+          type: string
+        tipo:
+          type: string
+          enum: [HIDRICA, CALORICA]
+        titulo:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        valor_objetivo:
+          type: number
+          exclusiveMinimum: 0
+        valor_atual:
+          type: number
+          minimum: 0
+        status:
+          type: string
+        data_criacao:
+          type: string
+          format: date-time
+
+    Registro:
+      type: object
+      properties:
+        id:
+          type: string
+        usuario_id:
+          type: integer
+        habito_id:
+          type: string
+          nullable: true
+        valor:
+          type: number
+        observacao:
+          type: string
+          nullable: true
+        data_registro:
+          type: string
+          format: date-time
+        atualizado_em:
+          type: string
+          format: date-time
+
+    RegistroInput:
+      type: object
+      required: [id, valor]
+      properties:
+        id:
+          type: string
+        habito_id:
+          type: string
+          nullable: true
+        valor:
+          type: number
+          exclusiveMinimum: 0
+        observacao:
+          type: string
+          nullable: true
+        data_registro:
+          type: string
+          format: date-time
+
+    SyncRequest:
+      type: object
+      properties:
+        habitos:
+          type: array
+          items:
+            $ref: '#/components/schemas/HabitoInput'
+        metas:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetaInput'
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistroInput'
+
+    SyncResponse:
+      type: object
+      properties:
+        sincronizado_em:
+          type: string
+          format: date-time
+        recebidos:
+          type: object
+          properties:
+            habitos:
+              type: integer
+            metas:
+              type: integer
+            registros:
+              type: integer
+        habitos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Habito'
+        metas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meta'
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+
+    BackupResponse:
+      type: object
+      properties:
+        usuario:
+          $ref: '#/components/schemas/UsuarioPublico'
+        habitos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Habito'
+        metas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meta'
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+        gerado_em:
+          type: string
+          format: date-time

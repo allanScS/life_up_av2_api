@@ -1,0 +1,7 @@
+# https://dart.dev/tools/private-files
+.dart_tool/
+.build/
+.packages
+
+# Credenciais locais — nunca versionar
+.env

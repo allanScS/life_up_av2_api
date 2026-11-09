@@ -1,0 +1,22 @@
+name: life_up_av2_api
+description: >
+  LifeUp AV2 — API REST Offline-First sync (hábitos, metas e registros).
+  Projeto acadêmico de Computação Móvel (Grupo 04).
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  shelf: ^1.4.2
+  shelf_router: ^1.1.2
+  shelf_cors_headers: ^0.1.5
+  postgres: ^3.5.0
+  crypto: ^3.0.6
+  dotenv: ^4.2.0
+
+dev_dependencies:
+  http: ^1.2.2
+  lints: ^6.0.0
+  test: ^1.25.6
